@@ -24,23 +24,24 @@ Implement the `Impersonate` interface on your user model:
 
 ```php
 use Elegantly\Impersonator\Impersonate;
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Foundation\Auth\User as BaseUser;
 
-class User extends Authenticatable implements Impersonate
+class User extends BaseUser implements Impersonate
 {
-    public function canImpersonate($user): bool
+    public function canImpersonate(Authenticatable&Impersonate $user): bool
     {
         return $this->is_admin;
     }
 
-    public function canBeImpersonatedBy($user): bool
+    public function canBeImpersonatedBy(Authenticatable&Impersonate $user): bool
     {
         return ! $this->is_admin;
     }
 }
 ```
 
-The package registers an `impersonate` Gate. It allows the action only when the original user can impersonate and the target user can be impersonated.
+The package registers an `impersonate` Gate. It prevents self-impersonation and requires both users to approve the relationship through the methods above.
 
 ## Routes
 
@@ -59,8 +60,6 @@ Route::middleware('auth')->group(function () {
 });
 ```
 
-The controller authorizes the request, starts or stops impersonation, and redirects back.
-
 ## Facade
 
 You may also manage impersonation directly. Authorize the target before starting:
@@ -70,13 +69,36 @@ use Elegantly\Impersonator\Facades\Impersonator;
 use Illuminate\Support\Facades\Gate;
 
 Gate::authorize('impersonate', $user);
-Impersonator::take($user);
+Impersonator::take($user); // bool
 
 Impersonator::isImpersonating(); // bool
 Impersonator::getImpersonator(); // original user or null
 Impersonator::getImpersonatorId(); // original user ID or null
 
-Impersonator::leave();
+Impersonator::leave(); // bool
+```
+
+`take()` and `leave()` return whether the impersonation state changed. Direct facade calls do not authorize automatically, so always call the `impersonate` Gate before `take()`.
+
+## Events
+
+The package dispatches events after each successful transition:
+
+- `Elegantly\Impersonator\Events\TakeImpersonation`
+- `Elegantly\Impersonator\Events\LeaveImpersonation`
+
+Both events expose the original user as `$impersonator` and the other user as `$impersonated`:
+
+```php
+use Elegantly\Impersonator\Events\TakeImpersonation;
+use Illuminate\Support\Facades\Event;
+
+Event::listen(TakeImpersonation::class, function (TakeImpersonation $event) {
+    logger()->info('User impersonated', [
+        'impersonator' => $event->impersonator->getAuthIdentifier(),
+        'impersonated' => $event->impersonated->getAuthIdentifier(),
+    ]);
+});
 ```
 
 ## Testing

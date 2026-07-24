@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Gate;
 
 class ImpersonatorController extends Controller
 {
-    public function take(int $user): RedirectResponse
+    public function take(string|int $user): RedirectResponse
     {
         $impersonated = Auth::getProvider()->retrieveById($user);
 
