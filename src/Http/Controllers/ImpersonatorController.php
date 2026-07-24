@@ -32,9 +32,9 @@ class ImpersonatorController extends Controller
 
     public function take(Authenticatable|string|int $user): string|RedirectResponse
     {
-        $impersonated = $this->impersonate($user);
-
-        return $this->redirect($impersonated);
+        return $this->redirect(
+            $this->impersonate($user)
+        );
     }
 
     public function leave(): string|RedirectResponse
