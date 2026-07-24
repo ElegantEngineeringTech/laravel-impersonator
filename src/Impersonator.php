@@ -2,8 +2,11 @@
 
 namespace Elegantly\Impersonator;
 
+use Elegantly\Impersonator\Events\LeaveImpersonation;
+use Elegantly\Impersonator\Events\TakeImpersonation;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Session;
 
 class Impersonator
@@ -28,41 +31,53 @@ class Impersonator
         return null;
     }
 
-    public function take(null|int|Authenticatable $user): bool
+    public function take(?Authenticatable $user): bool
     {
-        if ($user === null) {
-            $this->leave();
 
+        if ($user === null) {
+            return $this->leave();
+        }
+
+        $impersonator = $this->getImpersonator() ?? Auth::user();
+
+        if ($impersonator === null) {
             return false;
         }
 
-        $impersonatorId = $this->getImpersonatorId() ?? Auth::id();
+        Session::put('impersonator', $impersonator->getAuthIdentifier());
 
-        Session::put('impersonator', $impersonatorId);
-
-        if ($user instanceof Authenticatable) {
-            Auth::login($user);
-        } else {
-            Auth::loginUsingId($user);
-        }
+        Auth::login($user);
 
         Session::regenerate();
+
+        Event::dispatch(new TakeImpersonation($impersonator, $user));
 
         return true;
     }
 
     public function leave(): bool
     {
+        $impersonator = $this->getImpersonator();
 
-        if ($impersonatorId = Session::pull('impersonator')) {
-            Auth::loginUsingId($impersonatorId);
-
-            Session::regenerate();
-
-            return true;
+        if ($impersonator === null) {
+            return false;
         }
 
-        return false;
+        $impersonated = Auth::user();
+
+        if ($impersonated === null) {
+            return false;
+        }
+
+        Session::forget('impersonator');
+
+        Auth::login($impersonator);
+
+        Session::regenerate();
+
+        Event::dispatch(new LeaveImpersonation($impersonator, $impersonated));
+
+        return true;
 
     }
 }
