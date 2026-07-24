@@ -28,12 +28,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements Impersonate
 {
-    public function canImpersonate(): bool
+    public function canImpersonate($user): bool
     {
         return $this->is_admin;
     }
 
-    public function canBeImpersonated(): bool
+    public function canBeImpersonatedBy($user): bool
     {
         return ! $this->is_admin;
     }

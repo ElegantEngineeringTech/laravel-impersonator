@@ -38,15 +38,16 @@ class ImpersonatorServiceProvider extends PackageServiceProvider
 
             if (
                 ! $impersonator instanceof Impersonate ||
-                ! $impersonator->canImpersonate()
+                ! $user instanceof Impersonate
             ) {
                 return false;
             }
 
-            if (
-                ! $user instanceof Impersonate ||
-                ! $user->canBeImpersonated()
-            ) {
+            if (! $impersonator->canImpersonate($user)) {
+                return false;
+            }
+
+            if (! $user->canBeImpersonatedBy($impersonator)) {
                 return false;
             }
 

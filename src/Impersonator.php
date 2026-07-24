@@ -8,6 +8,17 @@ use Illuminate\Support\Facades\Session;
 
 class Impersonator
 {
+    public function isImpersonating(): bool
+    {
+        return Session::has('impersonator');
+    }
+
+    public function getImpersonatorId(): null|int|string
+    {
+        /** @var null|int|string */
+        return Session::get('impersonator');
+    }
+
     public function getImpersonator(): ?Authenticatable
     {
         if ($impersonatorId = $this->getImpersonatorId()) {
@@ -17,26 +28,17 @@ class Impersonator
         return null;
     }
 
-    public function getImpersonatorId(): ?int
-    {
-        /** @var ?int */
-        return Session::get('impersonator');
-    }
-
-    public function isImpersonating(): bool
-    {
-        return Session::has('impersonator');
-    }
-
-    public function take(null|int|Authenticatable $user): void
+    public function take(null|int|Authenticatable $user): bool
     {
         if ($user === null) {
             $this->leave();
 
-            return;
+            return false;
         }
 
-        Session::put('impersonator', Auth::id());
+        $impersonatorId = $this->getImpersonatorId() ?? Auth::id();
+
+        Session::put('impersonator', $impersonatorId);
 
         if ($user instanceof Authenticatable) {
             Auth::login($user);
@@ -45,16 +47,22 @@ class Impersonator
         }
 
         Session::regenerate();
+
+        return true;
     }
 
-    public function leave(): void
+    public function leave(): bool
     {
 
         if ($impersonatorId = Session::pull('impersonator')) {
             Auth::loginUsingId($impersonatorId);
 
             Session::regenerate();
+
+            return true;
         }
+
+        return false;
 
     }
 }
