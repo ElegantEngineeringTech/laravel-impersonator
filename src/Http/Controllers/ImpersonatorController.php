@@ -30,7 +30,7 @@ class ImpersonatorController extends Controller
         return $impersonated;
     }
 
-    public function take(Authenticatable|string|int $user): string|RedirectResponse
+    public function take(string|int $user): string|RedirectResponse
     {
         return $this->redirect(
             $this->impersonate($user)

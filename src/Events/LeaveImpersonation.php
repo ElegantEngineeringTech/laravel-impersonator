@@ -8,6 +8,6 @@ final readonly class LeaveImpersonation
 {
     public function __construct(
         public Authenticatable $impersonator,
-        public Authenticatable $impersonated,
+        public ?Authenticatable $impersonated,
     ) {}
 }

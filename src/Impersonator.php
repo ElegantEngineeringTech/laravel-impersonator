@@ -37,20 +37,21 @@ class Impersonator
 
     public function getImpersonator(): ?Authenticatable
     {
-        if ($impersonatorId = $this->getImpersonatorId()) {
+        $impersonatorId = $this->getImpersonatorId();
 
-            if (
-                $this->impersonator &&
-                $this->impersonator->getAuthIdentifier() === $impersonatorId
-            ) {
-                return $this->impersonator;
-            }
-
-            return $this->impersonator = Auth::getProvider()->retrieveById($impersonatorId);
-
+        if ($impersonatorId === null) {
+            return null;
         }
 
-        return null;
+        if (
+            $this->impersonator &&
+            $this->impersonator->getAuthIdentifier() === $impersonatorId
+        ) {
+            return $this->impersonator;
+        }
+
+        return $this->impersonator = Auth::getProvider()->retrieveById($impersonatorId);
+
     }
 
     public function take(?Authenticatable $user): bool
@@ -85,6 +86,7 @@ class Impersonator
             return false;
         }
 
+        /** @var ?Authenticatable */
         $impersonated = Auth::user();
 
         Session::forget($this->sessionKey());
@@ -92,6 +94,8 @@ class Impersonator
         Auth::login($impersonator);
 
         Session::regenerate();
+
+        $this->impersonator = null;
 
         Event::dispatch(new LeaveImpersonation($impersonator, $impersonated));
 
