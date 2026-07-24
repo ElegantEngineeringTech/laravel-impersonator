@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Elegantly\Impersonator\Http\Controllers;
 
 use Elegantly\Impersonator\Facades\Impersonator;
@@ -10,7 +12,14 @@ use Illuminate\Support\Facades\Gate;
 
 class ImpersonatorController extends Controller
 {
-    public function take(Authenticatable|string|int $user): RedirectResponse
+    protected function redirect(?Authenticatable $impersonated): string|RedirectResponse
+    {
+        return redirect()->intended(
+            url()->previous('/')
+        );
+    }
+
+    protected function impersonate(Authenticatable|string|int $user): ?Authenticatable
     {
         $impersonated = $user instanceof Authenticatable ? $user : Auth::getProvider()->retrieveById($user);
 
@@ -18,17 +27,20 @@ class ImpersonatorController extends Controller
 
         Impersonator::take($impersonated);
 
-        return redirect()->intended(
-            url()->previous('/')
-        );
+        return $impersonated;
     }
 
-    public function leave(): RedirectResponse
+    public function take(Authenticatable|string|int $user): string|RedirectResponse
+    {
+        $impersonated = $this->impersonate($user);
+
+        return $this->redirect($impersonated);
+    }
+
+    public function leave(): string|RedirectResponse
     {
         Impersonator::leave();
 
-        return redirect()->intended(
-            url()->previous('/')
-        );
+        return $this->redirect(null);
     }
 }
