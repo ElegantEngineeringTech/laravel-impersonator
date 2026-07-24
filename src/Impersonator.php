@@ -6,12 +6,19 @@ use Elegantly\Impersonator\Events\LeaveImpersonation;
 use Elegantly\Impersonator\Events\TakeImpersonation;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Session;
 
 class Impersonator
 {
+    public function __construct(
+        public string $session_key
+    ) {
+        //
+    }
+
+    protected ?Authenticatable $impersonator = null;
+
     public function isImpersonating(): bool
     {
         return Session::has($this->sessionKey());
@@ -31,16 +38,22 @@ class Impersonator
     public function getImpersonator(): ?Authenticatable
     {
         if ($impersonatorId = $this->getImpersonatorId()) {
-            return Auth::getProvider()->retrieveById($impersonatorId);
+
+            if (
+                $this->impersonator &&
+                $this->impersonator->getAuthIdentifier() === $impersonatorId
+            ) {
+                return $this->impersonator;
+            }
+
+            return $this->impersonator = Auth::getProvider()->retrieveById($impersonatorId);
+
         }
 
         return null;
     }
 
-    /**
-     * @return array{?Authenticatable, ?Authenticatable}
-     */
-    public function take(?Authenticatable $user): array
+    public function take(?Authenticatable $user): bool
     {
 
         if ($user === null) {
@@ -50,7 +63,7 @@ class Impersonator
         $impersonator = $this->getImpersonator() ?? Auth::user();
 
         if ($impersonator === null) {
-            return [null, null];
+            return false;
         }
 
         Session::put($this->sessionKey(), $impersonator->getAuthIdentifier());
@@ -61,23 +74,18 @@ class Impersonator
 
         Event::dispatch(new TakeImpersonation($impersonator, $user));
 
-        return [$impersonator, $user];
+        return true;
     }
 
-    /**
-     * @return array{?Authenticatable, ?Authenticatable}
-     */
-    public function leave(): array
+    public function leave(): bool
     {
-        $impersonated = Auth::user();
         $impersonator = $this->getImpersonator();
 
-        if (
-            $impersonated === null ||
-            $impersonator === null
-        ) {
-            return [null, null];
+        if ($impersonator === null) {
+            return false;
         }
+
+        $impersonated = Auth::user();
 
         Session::forget($this->sessionKey());
 
@@ -87,12 +95,12 @@ class Impersonator
 
         Event::dispatch(new LeaveImpersonation($impersonator, $impersonated));
 
-        return [$impersonator, $impersonated];
+        return true;
 
     }
 
     private function sessionKey(): string
     {
-        return Config::string('impersonator.session_key');
+        return $this->session_key;
     }
 }

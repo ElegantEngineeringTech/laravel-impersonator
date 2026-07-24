@@ -3,7 +3,7 @@
 namespace Elegantly\Impersonator;
 
 use Elegantly\Impersonator\Contracts\Impersonate;
-use Elegantly\Impersonator\Facades\Impersonator;
+use Elegantly\Impersonator\Facades\Impersonator as ImpersonatorFacade;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
@@ -24,10 +24,19 @@ class ImpersonatorServiceProvider extends PackageServiceProvider
             ->hasConfigFile();
     }
 
+    public function registeringPackage(): void
+    {
+        $this->app->scoped(Impersonator::class, function () {
+            return new Impersonator(
+                session_key: config()->string('impersonator.session_key', 'impersonator_id'),
+            );
+        });
+    }
+
     public function packageBooted(): void
     {
         Blade::if('impersonating', function (mixed $condition = true) {
-            return Impersonator::isImpersonating() && value($condition);
+            return ImpersonatorFacade::isImpersonating() && value($condition);
         });
 
         Gate::define('impersonate', static function (?Authenticatable $auth, ?Authenticatable $user) {
@@ -40,7 +49,7 @@ class ImpersonatorServiceProvider extends PackageServiceProvider
                 return false;
             }
 
-            $impersonator = Impersonator::getImpersonator() ?? $auth;
+            $impersonator = ImpersonatorFacade::getImpersonator() ?? $auth;
 
             if (
                 ! $impersonator instanceof Impersonate ||
