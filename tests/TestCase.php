@@ -2,9 +2,9 @@
 
 namespace Elegantly\Impersonator\Tests;
 
+use Elegantly\Impersonator\ImpersonatorServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Elegantly\Impersonator\ImpersonatorServiceProvider;
 
 class TestCase extends Orchestra
 {

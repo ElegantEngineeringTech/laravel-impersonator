@@ -8,8 +8,18 @@ use Illuminate\Support\Facades\Session;
 
 class Impersonator
 {
+    public function getImpersonator(): ?Authenticatable
+    {
+        if ($impersonatorId = $this->getImpersonatorId()) {
+            return Auth::getProvider()->retrieveById($impersonatorId);
+        }
+
+        return null;
+    }
+
     public function getImpersonatorId(): ?int
     {
+        /** @var ?int */
         return Session::get('impersonator');
     }
 
@@ -18,8 +28,14 @@ class Impersonator
         return Session::has('impersonator');
     }
 
-    public function take(int|Authenticatable $user): void
+    public function take(null|int|Authenticatable $user): void
     {
+        if ($user === null) {
+            $this->leave();
+
+            return;
+        }
+
         Session::put('impersonator', Auth::id());
 
         if ($user instanceof Authenticatable) {
