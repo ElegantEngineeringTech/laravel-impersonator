@@ -6,10 +6,10 @@ use Illuminate\Support\Facades\Facade;
 
 /**
  * @method static \Illuminate\Contracts\Auth\Authenticatable|null getImpersonator()
- * @method static int|null getImpersonatorId()
+ * @method static int|string|null getImpersonatorId()
  * @method static bool isImpersonating()
- * @method static void take(null|int|\Illuminate\Contracts\Auth\Authenticatable $user)
- * @method static void leave()
+ * @method static bool take(?\Illuminate\Contracts\Auth\Authenticatable $user)
+ * @method static bool leave()
  *
  * @see \Elegantly\Impersonator\Impersonator
  */
