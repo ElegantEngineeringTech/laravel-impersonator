@@ -37,7 +37,10 @@ class Impersonator
         return null;
     }
 
-    public function take(?Authenticatable $user): bool
+    /**
+     * @return array{?Authenticatable, ?Authenticatable}
+     */
+    public function take(?Authenticatable $user): array
     {
 
         if ($user === null) {
@@ -47,7 +50,7 @@ class Impersonator
         $impersonator = $this->getImpersonator() ?? Auth::user();
 
         if ($impersonator === null) {
-            return false;
+            return [null, null];
         }
 
         Session::put($this->sessionKey(), $impersonator->getAuthIdentifier());
@@ -58,21 +61,22 @@ class Impersonator
 
         Event::dispatch(new TakeImpersonation($impersonator, $user));
 
-        return true;
+        return [$impersonator, $user];
     }
 
-    public function leave(): bool
+    /**
+     * @return array{?Authenticatable, ?Authenticatable}
+     */
+    public function leave(): array
     {
+        $impersonated = Auth::user();
         $impersonator = $this->getImpersonator();
 
-        if ($impersonator === null) {
-            return false;
-        }
-
-        $impersonated = Auth::user();
-
-        if ($impersonated === null) {
-            return false;
+        if (
+            $impersonated === null ||
+            $impersonator === null
+        ) {
+            return [null, null];
         }
 
         Session::forget($this->sessionKey());
@@ -83,7 +87,7 @@ class Impersonator
 
         Event::dispatch(new LeaveImpersonation($impersonator, $impersonated));
 
-        return true;
+        return [$impersonator, $impersonated];
 
     }
 
