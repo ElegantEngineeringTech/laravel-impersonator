@@ -17,6 +17,11 @@ class Impersonator
         return Session::has($this->sessionKey());
     }
 
+    public function isNotImpersonating(): bool
+    {
+        return ! $this->isImpersonating();
+    }
+
     public function getImpersonatorId(): null|int|string
     {
         /** @var null|int|string */

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Illuminate\Contracts\Auth\Authenticatable|null getImpersonator()
  * @method static int|string|null getImpersonatorId()
  * @method static bool isImpersonating()
+ * @method static bool isNotImpersonating()
  * @method static bool take(?\Illuminate\Contracts\Auth\Authenticatable $user)
  * @method static bool leave()
  *
