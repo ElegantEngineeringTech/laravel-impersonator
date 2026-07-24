@@ -6,6 +6,7 @@ use Elegantly\Impersonator\Events\LeaveImpersonation;
 use Elegantly\Impersonator\Events\TakeImpersonation;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Session;
 
@@ -13,13 +14,13 @@ class Impersonator
 {
     public function isImpersonating(): bool
     {
-        return Session::has('impersonator');
+        return Session::has($this->sessionKey());
     }
 
     public function getImpersonatorId(): null|int|string
     {
         /** @var null|int|string */
-        return Session::get('impersonator');
+        return Session::get($this->sessionKey());
     }
 
     public function getImpersonator(): ?Authenticatable
@@ -44,7 +45,7 @@ class Impersonator
             return false;
         }
 
-        Session::put('impersonator', $impersonator->getAuthIdentifier());
+        Session::put($this->sessionKey(), $impersonator->getAuthIdentifier());
 
         Auth::login($user);
 
@@ -69,7 +70,7 @@ class Impersonator
             return false;
         }
 
-        Session::forget('impersonator');
+        Session::forget($this->sessionKey());
 
         Auth::login($impersonator);
 
@@ -79,5 +80,10 @@ class Impersonator
 
         return true;
 
+    }
+
+    private function sessionKey(): string
+    {
+        return Config::string('impersonator.session_key');
     }
 }
