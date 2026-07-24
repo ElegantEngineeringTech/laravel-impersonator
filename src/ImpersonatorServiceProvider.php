@@ -30,10 +30,11 @@ class ImpersonatorServiceProvider extends PackageServiceProvider
                 return false;
             }
 
-            $impersonatorId = Impersonator::getImpersonatorId();
-            $authId = $auth->getAuthIdentifier();
+            if ($auth->getAuthIdentifier() === $user->getAuthIdentifier()) {
+                return false;
+            }
 
-            $impersonator = $impersonatorId === $authId ? $auth : Impersonator::getImpersonator();
+            $impersonator = Impersonator::getImpersonator() ?? $auth;
 
             if (
                 ! $impersonator instanceof Impersonate ||

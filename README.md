@@ -6,46 +6,77 @@
 [![Laravel Pint](https://github.com/ElegantEngineeringTech/laravel-impersonator/actions/workflows/pint.yml/badge.svg)](https://github.com/ElegantEngineeringTech/laravel-impersonator/actions/workflows/pint.yml)
 [![PHPStan](https://github.com/ElegantEngineeringTech/laravel-impersonator/actions/workflows/phpstan.yml/badge.svg)](https://github.com/ElegantEngineeringTech/laravel-impersonator/actions/workflows/phpstan.yml)
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+Laravel Impersonator provides simple, session-based user impersonation. It remembers the original authenticated user, logs in as another user, and restores the original user when the impersonation ends.
 
 ## Installation
 
-You can install the package via composer:
+Install the package with Composer:
 
 ```bash
 composer require elegantly/laravel-impersonator
 ```
 
-You can publish and run the migrations with:
+The service provider and facade are discovered automatically by Laravel.
 
-```bash
-php artisan vendor:publish --tag="impersonator-migrations"
-php artisan migrate
-```
+## Authorization
 
-You can publish the config file with:
-
-```bash
-php artisan vendor:publish --tag="impersonator-config"
-```
-
-This is the contents of the published config file:
+Implement the `Impersonate` interface on your user model:
 
 ```php
-return [
-];
+use Elegantly\Impersonator\Impersonate;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+
+class User extends Authenticatable implements Impersonate
+{
+    public function canImpersonate(): bool
+    {
+        return $this->is_admin;
+    }
+
+    public function canBeImpersonated(): bool
+    {
+        return ! $this->is_admin;
+    }
+}
 ```
 
-Optionally, you can publish the views using
+The package registers an `impersonate` Gate. It allows the action only when the original user can impersonate and the target user can be impersonated.
 
-```bash
-php artisan vendor:publish --tag="impersonator-views"
-```
+## Routes
 
-## Usage
+Add authenticated routes using the provided controller:
 
 ```php
+use Elegantly\Impersonator\Http\Controllers\ImpersonatorController;
+use Illuminate\Support\Facades\Route;
 
+Route::middleware('auth')->group(function () {
+    Route::post('/impersonate/{user}', [ImpersonatorController::class, 'take'])
+        ->name('impersonate.take');
+
+    Route::delete('/impersonate', [ImpersonatorController::class, 'leave'])
+        ->name('impersonate.leave');
+});
+```
+
+The controller authorizes the request, starts or stops impersonation, and redirects back.
+
+## Facade
+
+You may also manage impersonation directly. Authorize the target before starting:
+
+```php
+use Elegantly\Impersonator\Facades\Impersonator;
+use Illuminate\Support\Facades\Gate;
+
+Gate::authorize('impersonate', $user);
+Impersonator::take($user);
+
+Impersonator::isImpersonating(); // bool
+Impersonator::getImpersonator(); // original user or null
+Impersonator::getImpersonatorId(); // original user ID or null
+
+Impersonator::leave();
 ```
 
 ## Testing
