@@ -2,6 +2,7 @@
 
 namespace Elegantly\Impersonator;
 
+use Elegantly\Impersonator\Contracts\Impersonate;
 use Elegantly\Impersonator\Facades\Impersonator;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Blade;

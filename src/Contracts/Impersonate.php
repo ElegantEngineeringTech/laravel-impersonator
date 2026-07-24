@@ -1,6 +1,6 @@
 <?php
 
-namespace Elegantly\Impersonator;
+namespace Elegantly\Impersonator\Contracts;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 
